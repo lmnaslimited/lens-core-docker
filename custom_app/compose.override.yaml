@@ -1,21 +1,21 @@
 services:
   configurator:
-    image: custom_app/worker:${VERSION}
+    image: ghcr.io/lmnaslimited/lensdocker/worker:${VERSION}
 
   backend:
-    image: custom_app/worker:${VERSION}
+    image: ghcr.io/lmnaslimited/lensdocker/worker:${VERSION}
 
   frontend:
-    image: custom_app/nginx:${VERSION}
+    image: ghcr.io/lmnaslimited/lensdocker/nginx:${VERSION}
 
   queue-short:
-    image: custom_app/worker:${VERSION}
+    image: ghcr.io/lmnaslimited/lensdocker/worker:${VERSION}
 
   queue-default:
-    image: custom_app/worker:${VERSION}
+    image: ghcr.io/lmnaslimited/lensdocker/worker:${VERSION}
 
   queue-long:
-    image: custom_app/worker:${VERSION}
+    image: ghcr.io/lmnaslimited/lensdocker/worker:${VERSION}
 
   scheduler:
-    image: custom_app/worker:${VERSION}
+    image: ghcr.io/lmnaslimited/lensdocker/worker:${VERSION}
