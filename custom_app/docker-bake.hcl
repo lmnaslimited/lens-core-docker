@@ -1,4 +1,4 @@
-APP_NAME="custom_app"
+APP_NAME="hrms"
 
 variable "FRAPPE_VERSION" {}
 variable "ERPNEXT_VERSION" {}
