@@ -11,13 +11,13 @@ RUN apt-get update \
 
 RUN useradd -ms /bin/bash frappe
 USER frappe
-RUN mkdir -p /home/frappe/frappe-bench/apps /home/frappe/frappe-bench/logs /home/frappe/frappe-bench/sites
+RUN mkdir -p /home/frappe/frappe-bench/apps /home/frappe/frappe-bench/logs /home/frappe/frappe-bench/sites /home/frappe/frappe-bench/config
 WORKDIR /home/frappe/frappe-bench
 
 USER root
-RUN pip install -U pip wheel \
+RUN pip install --no-cache-dir -U pip wheel \
     && python -m venv env \
-    && env/bin/pip install -U pip wheel
+    && env/bin/pip install --no-cache-dir -U pip wheel
 
 COPY install-app.sh /usr/local/bin/install-app
 
@@ -68,15 +68,27 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     && git clone --depth 1 -b ${ERPNEXT_VERSION} ${ERPNEXT_REPO} apps/erpnext \
     && install-app erpnext
 
-
 FROM base as configured_base
 
 ARG WKHTMLTOPDF_VERSION=0.12.6-1
-
+ARG NODE_VERSION
+ENV NVM_DIR=/home/frappe/.nvm
+ENV PATH ${NVM_DIR}/versions/node/v${NODE_VERSION}/bin/:${PATH}
 RUN apt-get update \
     # Setup Node lists
-    && apt-get install --no-install-recommends -y curl \
-    && curl -sL https://deb.nodesource.com/setup_14.x | bash - \
+    && apt-get install --no-install-recommends -y curl git \
+    # NodeJS with NVM
+    && mkdir -p ${NVM_DIR} \
+    && curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash \
+    && . ${NVM_DIR}/nvm.sh \
+    && nvm install ${NODE_VERSION} \
+    && nvm use v${NODE_VERSION} \
+    && npm install -g yarn \
+    && nvm alias default v${NODE_VERSION} \
+    && rm -rf ${NVM_DIR}/.cache \
+    && echo 'export NVM_DIR="/home/frappe/.nvm"' >>~/.bashrc \
+    && echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm' >> ~/.bashrc \
+    && echo '[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion' >> ~/.bashrc \
     # Install wkhtmltopdf with patched qt
     && if [ "$(uname -m)" = "aarch64" ]; then export ARCH=arm64; fi \
     && if [ "$(uname -m)" = "x86_64" ]; then export ARCH=amd64; fi \
@@ -95,8 +107,7 @@ RUN apt-get update \
     # For healthcheck
     wait-for-it \
     jq \
-    # other
-    nodejs \
+    # Clean up
     && rm -rf /var/lib/apt/lists/*
 
 COPY pretend-bench.sh /usr/local/bin/bench
@@ -130,9 +141,9 @@ USER frappe
 # Split frappe and erpnext to reduce image size (because of frappe-bench/env/ directory)
 FROM configured_base as erpnext
 
-COPY --from=erpnext_builder /home/frappe/frappe-bench/apps /home/frappe/frappe-bench/apps
-COPY --from=erpnext_builder /home/frappe/frappe-bench/env /home/frappe/frappe-bench/env
-COPY --from=erpnext_builder /home/frappe/frappe-bench/sites/apps.txt /home/frappe/frappe-bench/sites/
-RUN chown -R frappe:frappe /home/frappe
+COPY --from=erpnext_builder --chown=frappe:frappe /home/frappe/frappe-bench/apps /home/frappe/frappe-bench/apps
+COPY --from=erpnext_builder --chown=frappe:frappe /home/frappe/frappe-bench/env /home/frappe/frappe-bench/env
+COPY --from=erpnext_builder --chown=frappe:frappe /home/frappe/frappe-bench/sites/apps.txt /home/frappe/frappe-bench/sites/
+
 
 USER frappe

@@ -11,7 +11,12 @@ In order to start developing you need to satisfy the following prerequisites:
 It is recommended you allocate at least 4GB of RAM to docker:
 
 - [Instructions for Windows](https://docs.docker.com/docker-for-windows/#resources)
-- [Instructions for macOS](https://docs.docker.com/docker-for-mac/#resources)
+- [Instructions for macOS](https://docs.docker.com/desktop/settings/mac/#advanced)
+
+Here is a screenshot showing the relevant setting in the Help Manual
+![image](/docs/images/Docker%20Manual%20Screenshot%20-%20Resources%20section.png)
+Here is a screenshot showing the settings in Docker Desktop on Mac
+![images](/docs/images/Docker%20Desktop%20Screenshot%20-%20Resources%20section.png)
 
 ## Bootstrap Containers for development
 
@@ -61,6 +66,8 @@ Notes:
 
 ### Setup first bench
 
+> Jump to [scripts](#setup-bench--new-site-using-script) section to setup a bench automatically. Alternatively, you can setup a bench manually using below guide.
+
 Run the following commands in the terminal inside the container. You might need to create a new terminal in VSCode.
 
 ```shell
@@ -68,17 +75,23 @@ bench init --skip-redis-config-generation frappe-bench
 cd frappe-bench
 ```
 
-For version 13 use Python 3.9 by passing option to `bench init` command,
+To setup frappe framework version 14 bench set `PYENV_VERSION` environment variable to `3.10.5` (default) and use NodeJS version 16 (default),
 
 ```shell
-bench init --skip-redis-config-generation --frappe-branch version-13 --python python3.9 frappe-bench
+# Use default environments
+bench init --skip-redis-config-generation --frappe-branch version-14 frappe-bench
+# Or set environment versions explicitly
+nvm use v16
+PYENV_VERSION=3.10.5 bench init --skip-redis-config-generation --frappe-branch version-14 frappe-bench
+# Switch directory
 cd frappe-bench
 ```
 
-For version 12 use Python 3.7 by passing option to `bench init` command,
+To setup frappe framework version 13 bench set `PYENV_VERSION` environment variable to `3.9.9` and use NodeJS version 14,
 
 ```shell
-bench init --skip-redis-config-generation --frappe-branch version-12 --python python3.7 frappe-bench
+nvm use v14
+PYENV_VERSION=3.9.9 bench init --skip-redis-config-generation --frappe-branch version-13 frappe-bench
 cd frappe-bench
 ```
 
@@ -218,6 +231,39 @@ bench start
 You can now login with user `Administrator` and the password you choose when creating the site.
 Your website will now be accessible at location [mysite.localhost:8000](http://mysite.localhost:8000)
 Note: To start bench with debugger refer section for debugging.
+
+### Setup bench / new site using script
+
+Most developers work with numerous clients and versions. Moreover, apps may be required to be installed by everyone on the team working for a client.
+
+This is simplified using a script to automate the process of creating a new bench / site and installing the required apps.
+
+Create a copy of apps-example.json and name it apps.json
+
+```shell
+cp apps-example.json apps.json
+```
+
+Maintain a directory of all client apps in apps.json. Note that Maintaining a fork is optional in apps.json. Also `name` should be app name in apps.json (could be different from repo name).
+
+> You may have apps in private repos which may require ssh access. You may use SSH from your home directory on linux (configurable in docker-compose.yml).
+
+After you have created apps.json, run the following command:
+
+```shell
+bash installer.sh
+```
+
+The script will ask for the following information:
+
+- Client name (from apps.json).
+- Bench directory name. If you enter existing bench directory name, it will create a new site in that bench. Else it will create a new bench and site.
+- Site name (should end with `.localhost`).
+
+A new bench and / or site is created for the client with following defaults.
+
+- MariaDB root password: `123`
+- Admin password: `admin`
 
 ### Start Frappe with Visual Studio Code Python Debugging
 
